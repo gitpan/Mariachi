@@ -6,15 +6,18 @@ use Template;
 use Time::HiRes qw( gettimeofday tv_interval );
 use Data::Dumper qw( Dumper );
 use Storable qw( store retrieve );
+use File::Path qw( mkpath );
+use File::Copy qw( copy move );
+use File::Find::Rule;
+use File::Basename;
 
 use base 'Class::Accessor::Fast';
 
 use vars '$VERSION';
-$VERSION = 0.31;
+$VERSION = 0.4;
 
-__PACKAGE__->mk_accessors( qw( input output messages rootset
-                               threads_per_page list_title
-                               start_time last_time ) );
+__PACKAGE__->mk_accessors( qw( config messages rootset
+                               start_time last_time tt ) );
 
 =head1 NAME
 
@@ -24,13 +27,10 @@ Mariachi - all dancing mail archive generator
 
 =head1 ACESSORS
 
-=head2 ->input
+=head2 ->config
 
-The source of mail that we're acting on
-
-=head2 ->output
-
-The output directory
+An L<AppConfig> object containing the current configuration.  See
+L<mariachi> for details of the configurable items.
 
 =head2 ->messages
 
@@ -39,15 +39,6 @@ The current set of messages
 =head2 ->rootset
 
 The rootset of threaded messages
-
-=head2 ->threads_per_page
-
-How many top level threads to put on a thread index page.  Used by
-C<generate>
-
-=head2 ->list_title
-
-The name of this list.  Used by C<generate>
 
 =head2 ->start_time
 
@@ -95,13 +86,13 @@ populate C<messages> from C<input>
 sub load {
     my $self = shift;
 
-    my $folder = Mariachi::Folder->new( $self->input )
-      or die "Unable to open ".$self->input;
+    my $folder = Mariachi::Folder->new( $self->config->input )
+      or die "Unable to open ".$self->config->input;
 
     $| = 1;
     my $cache;
-    $cache = $self->input.".cache" if $ENV{M_CACHE};
-    if ($cache && -e $cache) {
+    $cache = $self->config->input.".cache" if $ENV{M_CACHE};
+    if ($cache && -e $cache && !$self->config->refresh) {
         print "pulling in $cache\n";
         $self->messages( retrieve( $cache ) );
         return;
@@ -334,95 +325,202 @@ sub split_deep {
     }
 }
 
-=head2 ->generate
 
-render thread tree into the directory of C<output>
+=head2 ->copy_files
+
+copy files into the output dir
 
 =cut
 
-# XXX this seems to have just passed the stage of being too big
-sub generate {
+
+sub copy_files {
     my $self = shift;
 
-    my $tt = Template->new(
-        INCLUDE_PATH => 'templates:/usr/local/mariachi/templates',
-        RECURSION => 1
-       );
+    for my $dir (@{ $self->config->templates }) {
+        my @files = map {
+            s{$dir/?}{}; $_
+        } find( or => [ find( directory =>
+                              name      => [ qw( CVS .svn ) ],
+                              prune     =>
+                              discard   => ),
+                        find( file => '!name' => [ '*.tt2', '*~', '*.bak' ] )
+                       ],
+                in => $dir );
+        for (@files) {
+            mkpath dirname $self->config->output . "/$_";
+            copy( "$dir/$_", $self->config->output . "/$_" )
+              or die "couldn't copy $dir/$_ $!";
+        }
+    }
+}
 
-    my @threads = @{ $self->rootset };
-    my $pages = int(scalar(@threads) / $self->threads_per_page);
-    my $page = 0;
-    my %touched_threads;
+
+=head2 init_tt
+
+=cut
+
+sub init_tt {
+    my $self = shift;
+
+    $self->tt(
+        Template->new(
+            INCLUDE_PATH => join(':', reverse @{ $self->config->templates }),
+            RECURSION => 1
+           )
+       );
+}
+
+
+=head2 generate_pages( $template, $filename, %data )
+
+=cut
+
+sub generate_pages {
+    my $self = shift;
+    my $template = shift;
+    my $spool    = shift;
+
+    my $again;
+    do {
+        my $file = $spool;
+        $self->tt->process(
+            $template,
+            { @_,
+              mariachi  => $self,
+              # callbacktastic
+              again     => sub { $again },
+              file      => sub { $file  },
+              nthpage   => sub {
+                  my $n    = shift;
+                  my $page = $spool;
+                  return $page if $n == 1;
+                  --$n;
+                  $page =~ s/\./_$n./;
+                  return $page;
+              },
+              set_again => sub { $again = shift; return },
+              set_file  => sub { $file  = shift; return }, },
+            $self->config->output . "/$$.tmp" )
+          or die $self->tt->error;
+
+        mkpath dirname $self->config->output . "/$file";
+        move $self->config->output . "/$$.tmp", $self->config->output . "/$file"
+          or die "$!";
+    } while $again;
+}
+
+
+=head2 ->generate_lurker_index
+
+=cut
+
+sub generate_lurker {
+    my $self = shift;
+
+    my $l = Mariachi::Lurker->new;
+    $self->generate_pages(
+        'lurker.tt2', 'lurker.html',
+        content => [
+            map { [ $l->arrange( $_ ) ] } @{ $self->rootset }
+           ],
+        perpage    => 10,
+       );
+}
+
+
+=head2 ->generate_thread_index
+
+=cut
+
+sub generate_thread {
+    my $self = shift;
+
+    $self->generate_pages(
+        'index.tt2', 'index.html',
+        content => $self->rootset,
+        perpage => 20,
+    );
+}
+
+
+=head2 ->generate_date
+
+=cut
+
+sub generate_date {
+    my $self = shift;
+
     my %touched_dates;
     my %dates;
-    my $prev;
-    while (@threads) {
-        # @chunk is the chunk of threads on this page
-        my @chunk = splice @threads, 0, $self->threads_per_page;
-        my $index_file = $page ? "index_$page.html" : "index.html";
-        for my $root (@chunk) {
-            my $sub;
-            $sub = sub {
-                my $c = shift or return;
 
-                if (my $mail = $c->message) {
-                    # let the message know where it's linked from, and
-                    # what it's linked to
-                    $mail->index($index_file);
+    # wander things to find dirty threads, and dates
+    for my $root (@{ $self->rootset }) {
+        my $sub;
+        $sub = sub {
+            my $c = shift or return;
 
-                    # and mark the thread dirty, if the message is new
-                    unless (-e $self->output."/".$mail->filename) {
-                        $touched_threads{ $root } = $root;
-                        # dirty up the date indexes
-                        $touched_dates{ $mail->year } = 1;
-                        $touched_dates{ $mail->month } = 1;
-                        $touched_dates{ $mail->day } = 1;
-                    }
-
-                    # add things to the date indexes
-                    push @{ $dates{ $mail->year } }, $mail;
-                    push @{ $dates{ $mail->month } }, $mail;
-                    push @{ $dates{ $mail->day } }, $mail;
+            if (my $mail = $c->message) {
+                # mark the thread dirty, if the message is new
+                unless (-e $self->config->output."/".$mail->filename &&
+                        !$self->config->refresh) {
+                    # dirty up the date indexes
+                    $touched_dates{ $mail->year } = 1;
+                    $touched_dates{ $mail->month } = 1;
+                    $touched_dates{ $mail->day } = 1;
                 }
-            };
-            $root->iterate_down($sub);
-            undef $sub; # since we closed over ourself, we'll have to
-                        # be specific
-        }
 
-        $tt->process('index.tt2',
-                     { threads => \@chunk,
-                       page => $page,
-                       pages => $pages,
-                       list_title => $self->list_title,
-                     },
-                     $self->output . "/$index_file" )
-          or die $tt->error;
-        $page++;
-        print STDERR "\rindex $page";
+                # add things to the date indexes
+                push @{ $dates{ $mail->year } }, $mail;
+                push @{ $dates{ $mail->month } }, $mail;
+                push @{ $dates{ $mail->day } }, $mail;
+            }
+        };
+        $root->iterate_down($sub);
+        undef $sub; # since we closed over ourself, we'll have to be specific
     }
-    print STDERR "\n";
-    $self->_bench("thread indexes");
 
     for ( keys %touched_dates ) {
         my @mails = sort {
             $a->epoch_date <=> $b->epoch_date
         } @{ $dates{$_} };
 
-        # TODO paginate these too
         my @depth = split m!/!;
-        $tt->process('date.tt2',
-                     { archive_date => $_,
-                       mails        => \@mails,
-                       base         => "../" x @depth,
-                     },
-                     $self->output . "/$_/index.html" )
-          or die $tt->error;
+        $self->generate_pages( 'date.tt2', "$_/index.html",
+                               archive_date => $_,
+                               content      => \@mails,
+                               base         => "../" x @depth,
+                               perpage      => 20,
+                              );
     }
-    $self->_bench("date indexes");
+}
+
+=head2 ->generate_bodies
+
+render thread tree into the directory of C<output>
+
+=cut
+
+sub generate_bodies {
+    my $self = shift;
+
+    my %touched_threads;
+    # wander things to find dirty threads
+    for my $root (@{ $self->rootset }) {
+        my $sub;
+        $sub = sub {
+            if (my $mail = eval { $_[0]->message }) {
+                # mark the thread dirty, if the message is new
+                $touched_threads{ $root } = $root
+                  unless -e $self->config->output."/".$mail->filename
+                    && !$self->config->refresh;
+            }
+        };
+        $root->iterate_down($sub);
+        undef $sub; # since we closed over ourself, we'll have to be specific
+    }
 
     # figure out adjacent dirty threads
-    @threads = @{ $self->rootset };
+    my @threads = @{ $self->rootset };
     for my $i (grep { $touched_threads{ $threads[$_] } } 0..$#threads) {
         $touched_threads{ $threads[$i-1] } = $threads[$i-1] if $i > 0;
         $touched_threads{ $threads[$i+1] } = $threads[$i+1] if $i+1 < @threads;
@@ -430,6 +528,7 @@ sub generate {
 
     # and then render all the messages in the dirty threads
     my $count  = 0;
+    my $tt = $self->tt;
     for my $root (values %touched_threads) {
         my $sub = sub {
             my $mail = $_[0]->message or return;
@@ -437,19 +536,18 @@ sub generate {
 
             $tt->process('message.tt2',
                          { base      => '../../../',
+                           mariachi  => $self,
                            thread    => $root,
                            message   => $mail,
                            container => $_[0],
                          },
-                         $self->output . "/" . $mail->filename)
+                         $self->config->output . "/" . $mail->filename)
               or die $tt->error;
         };
         $root->recurse_down( $sub );
         undef $sub;
     }
     print STDERR "\n";
-
-    $self->_bench("message bodies");
 }
 
 =head2 ->perform
@@ -469,11 +567,16 @@ sub perform {
     $self->sanity;          $self->_bench("sanity");
     $self->order;           $self->_bench("order");
     $self->sanity;          $self->_bench("sanity");
+    $self->copy_files;      $self->_bench("copy files");
+    $self->init_tt;         $self->_bench("tt init");
+    $self->generate_lurker; $self->_bench("lurker output");
     $self->strand;          $self->_bench("strand");
     $self->split_deep;      $self->_bench("deep threads split up");
     $self->sanity;          $self->_bench("sanity");
     $self->order;           $self->_bench("order");
-    $self->generate;        $self->_bench("generate");
+    $self->generate_thread; $self->_bench("regular thread indexes");
+    $self->generate_date;   $self->_bench("date indexes");
+    $self->generate_bodies; $self->_bench("messages");
 }
 
 package Mariachi::Folder;
@@ -482,6 +585,12 @@ use Email::Folder;
 use base 'Email::Folder';
 
 sub bless_message { Mariachi::Message->new($_[1]) }
+
+package Mariachi::Lurker;
+use Mail::Thread::Chronological;
+use base 'Mail::Thread::Chronological';
+
+sub extract_time { $_[1]->message->epoch_date }
 
 1;
 
@@ -493,8 +602,12 @@ This code was written as part of the Siesta project and includes code
 from:
 
 Richard Clamp <richardc@unixbeard.net>
+
 Simon Wistow <simon@thegestalt.org>
+
 Tom Insam <tom@jerakeen.org>
+
+Mark Fowler <mark@twoshortplanks.com>
 
 More information about the Siesta project can be found online at
 http://siesta.unixbeard.net/

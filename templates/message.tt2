@@ -1,14 +1,14 @@
 [% PROCESS header.tt2 title = message.subject %]
-
-
 [% USE Mariachi %]
 
 <h1>[% message.subject | html %]</h1>
 
 <p>
 [<a href="[% base %][% message.prev.filename %]">prev</a>]
-[<a href="[% base %][% message.index %]#[% message.filename %]">thread</a>]
+[<a href="[% base %][% message.linked.thread %]#[% message.filename %]">thread</a>]
 [<a href="[% base %][% message.next.filename %]">next</a>]
+
+[<a href="[% base %][% message.linked.lurker %]#[% message.filename %]">lurker</a>]
 
 [Date index for <a href="[% base %][% message.year %]">[% message.ymd.0 %]</a>/<a href="[% base %][% message.month %]">[% message.ymd.1 %]</a>/<a href="[% base %][% message.day %]">[% message.ymd.2 %]</a>]
 </p>
@@ -20,7 +20,8 @@
 </div>
 
 <pre>[% message.body_sigless | html | mariachi  %][% IF message.sig -%]
--- <i>[% message.sig | html | mariachi %][% END %]</i></pre>
+-- <i>
+[% message.sig | html | mariachi %][% END %]</i></pre>
 
 [%# INCLUDE prevnext.tt2 %]
 [%
@@ -38,5 +39,4 @@ There's stuff above here</li>
 [% INCLUDE thread.tt2 depth=0 %]
 </ul>
 
-</body>
-</html>
+[% PROCESS footer.tt2 %]

@@ -8,11 +8,14 @@ my $build = Siesta::Build->new(
     license      => 'perl',
     script_files => [ 'mariachi' ],
     requires     => {
+        'AppConfig'       => '1.55',
         'Email::Folder'   => '0.5',
         'Module::Build'   => '0.18',
         'Mail::Thread'    => '2.2',
+        'Mail::Thread::Chronological' => '1.22',
         'Email::Thread'   => 0,
         'Template'        => 0,
+        'Template::Plugin::Page' => 0,
         'Date::Parse'     => 0,
         'Class::Accessor' => 0,
         'Email::Find'     => 0,
@@ -21,8 +24,11 @@ my $build = Siesta::Build->new(
         'Test::More'      => 0,
         'Storable'        => 0,
         'Time::HiRes'     => 0,
+        'File::Find::Rule' => 0,
+        'File::Path'      => 0,
+        'File::Copy'      => 0,
+        'File::Basename'  => 0,
     },
-    sign => 1,
     create_makefile_pl => 'passthrough',
    );
 

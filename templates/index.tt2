@@ -1,19 +1,16 @@
-[% PROCESS header.tt2 title=list_title %]
+[% PROCESS header.tt2 title=mariachi.config.name %]
 
-<h1>[% list_title %]</h1>
-
+<h1>[% mariachi.config.name %]</h1>
+[% PROCESS paginate.tt2 %]
 [% PROCESS pagenav.tt2 %]
 
-[% FOREACH root = threads %]
+[% FOREACH root = page.splice(content) %]
+
 <ul class="threads">
-    [% INCLUDE thread.tt2 thread=root depth=0 %]
+    [% INCLUDE thread.tt2 thread=root depth=0 backlink=1 %]
 </ul>
 
 [% END %]
 
 [% PROCESS pagenav.tt2 %]
-
-<p>Generated at [% date.format %] by mariachi</p>
-
-</body>
-</html>
+[% PROCESS footer.tt2 %]

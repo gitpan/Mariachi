@@ -7,8 +7,8 @@ use Date::Parse qw(str2time);
 use Memoize;
 
 use base qw(Class::Accessor::Fast);
-__PACKAGE__->mk_accessors(qw( body _header index next prev root
-                              epoch_date day month year ymd
+__PACKAGE__->mk_accessors(qw( body _header next prev root
+                              epoch_date day month year ymd linked
                             ));
 
 =head1 NAME
@@ -32,6 +32,7 @@ sub new {
     my $self = $class->SUPER::new;
     my $mail = Email::Simple->new($source) or return;
 
+    $self->linked({});
     $self->_header({});
     $self->header_set( $_, $mail->header($_) ) for
       qw( message-id from subject date references in-reply-to );
@@ -56,7 +57,7 @@ sub new {
 
 sub _make_fake_id {
     my $self = shift;
-    my $hash = md5_hex( $self->header('from').$self->epoch_date );
+    my $hash = substr( md5_hex( $self->header('from').$self->date ), 0, 8 );
     return "$hash\@made_up";
 }
 
@@ -83,6 +84,138 @@ sub header_set {
 }
 
 
+=head2 ->first_lines
+
+Returns the a number of lines after the first non blank, none quoted
+line of the body of the email.
+
+It will guess at attribution lines and skip them as well.
+
+It will return super cited lines. This is the super-citers'
+fault, not ours.
+
+It won't catch all types of attribution lines;
+
+It can optionally be passed a number of lines to get.
+
+=cut
+
+sub first_lines {
+    my $self = shift;
+    my $num  = shift || 1;
+
+    return $self->_significant_signal(lines => $num);
+}
+
+
+=head2 ->first_paragraph
+
+Returns the first original paragraph of the message
+
+=cut
+
+sub first_paragraph {
+    my $self = shift;
+    return $self->_significant_signal(para => 1);
+}
+
+=head2 ->first_sentence
+
+Returns the first original sentence of the message
+
+=cut
+
+sub first_sentence {
+    my $self = shift;
+    my $text = $self->first_paragraph();
+    $text =~ s/([.?!]).*/$1/s;
+    return $text;
+}
+
+sub _significant_signal {
+    my $self = shift;
+    my %opts = @_;
+
+    my $return = "";
+    my $lines  = 0;
+
+    # get all the lines from the main part of the body
+    my @lines = split /$/m, $self->body_sigless;
+
+    # right, find the start of the original content or quoted
+    # content (i.e. skip past the attributation)
+    my $not_started = 1;
+    while (@lines && $not_started) {
+        # next line
+        local $_ = shift @lines;
+        #print "}}$_";
+
+        # blank lines, euurgh
+        next if /^\s*$/;
+        # quotes (we don't count quoted From's)
+        next if /^\s*>(?!From)/;
+        # skip obvious attribution
+        next if /^\s*On (Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i;
+        next if /^\s*.+=? wrote:/i;
+
+        # skip signed messages
+        next if /^\s*-----/;
+        next if /^Hash:/;
+
+        # annoying hi messages (this won't work with i18n)
+        next if /^\s*(?:hello|hi|hey|greetings|salut
+                        |good (?:morning|afternoon|day|evening))
+                 (?:\W.{0,14})?\s*$/ixs;
+
+        # snips
+        next if m~\s*                          # whitespace
+                  [<.=-_*+({\[]*?              # opening bracket
+                  (?:snip|cut|delete|deleted)  # snip?
+                  [^>}\]]*?                    # some words?
+                  [>.=-_*+)}\]]*?              # closing bracket
+                 \s*$                          # end of the line
+                 ~xi;
+
+        # [.. foo ..] or ...foo.. or so on
+        next if m~\s*\[?\.\..*?\.\.]?\s*$~;
+
+        # ... or [...]
+        next if m~\s*\[?\.\.\.]?\s*$~;
+
+        # if we got this far then we've probably got past the
+        # attibutation lines
+        unshift @lines, $_;  # undo the shift
+        undef $not_started;  # and say we've started.
+    }
+
+    # okay, let's _try_ to build up some content then
+    foreach (@lines) {
+        # are we at the end of a paragraph?
+        last if (defined $opts{'para'}  # paragraph mode?
+                 && $opts{'para'}==1
+                 && $lines>0            # got some lines aready?
+                 && /^\s*$/);           # and now we've found a gap?
+
+        # blank lines, euurgh
+        next if /^\s*$/;
+        # quotes (we don't count quoted From's)
+        next if /^\s*>(?!From)/;
+
+        # if we got this far then the line was a useful one
+        $lines++;
+
+        # sort of munged Froms
+        s/^>From/From/;
+        s/^\n+//;
+        $return .= "\n" if $lines>1;
+        $return .= $_;
+        last if (defined $opts{'lines'} && $opts{'lines'}==$lines);
+    }
+    return $return;
+}
+
+memoize('_significant_signal');
+
 =head2 ->body_sigless
 
 Returns the body with the signature (defined as anything
@@ -106,7 +239,7 @@ Returns the stripped sig.
 sub sig {
     my $self = shift;
     my (undef, $sig) = split /^-- $/m, $self->body, 2;
-
+    $sig =~ s/^\n// if $sig;
     return $sig;
 }
 
@@ -125,6 +258,7 @@ sub from {
     $from =~ s/<.*>//;
     $from =~ s/\@\S+//;
     $from =~ s/\s+\z//;
+    $from =~ s/"(.*?)"/$1/;
     return $from;
 }
 memoize('from');
@@ -175,7 +309,10 @@ The date header pared into epoch seconds
 
 epoch_date formatted in useful ways
 
-=head2 ->index
+=head2 ->linked
+
+hashref of indexes that link to us.  key is the type of index, value
+is the filename
 
 =head2 ->next
 

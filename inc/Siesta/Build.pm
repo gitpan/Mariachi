@@ -15,15 +15,17 @@ sub create_build_script {
     if (my $version = $self->check_installed_version($module, 0)) {
         print "Upgrading from $module $version\n";
         my $fh = IO::File->new('Changes');
-        local $/ = "\n\n\n";
+        my $chunk = '';
+        my $this;
         while (<$fh>) {
-            next unless /^(\S+)/;
-            my $chunk = $_; # check installed version stomps $_
-            my $this = $1;
-            last if $self->check_installed_version( $module, $this );
-            print "Incompatible changes were introducted in version $this:\n",
-              $chunk
-                if $chunk =~ /INCOMPATIBLE/s;
+            if (/^(\S+)/) {
+                print "Incompatible change introduced in version $this:\n", $chunk
+                    if $chunk =~ /INCOMPATIBLE/;
+                $this = $1;
+                last if $self->check_installed_version( $module, $this );
+                $chunk = '';
+            }
+            $chunk .= $_;
         }
     }
 }
@@ -51,6 +53,20 @@ sub ACTION_install_extras {
           ? print "$_ -> $path/$_ (FAKE)\n"
           : $self->copy_if_modified($_, $path);
     }
+}
+
+sub ACTION_cover {
+    my $self = shift;
+    $self->depends_on('build');
+    system qw( rm -rf cover_db );
+
+    # sometimes we get failing tests, which makes Test::Harness
+    # die.  catch that
+    eval {
+        local $ENV{PERL5OPT} = "-MDevel::Cover=-summary,0";
+        $self->ACTION_test(@_);
+    };
+    system qw( cover -report html );
 }
 
 sub _find_extras {
