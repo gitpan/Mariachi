@@ -1,0 +1,25 @@
+<li class="thread">
+[% IF thread.message %]
+  [% IF thread.message == message ; "<b>" ; ELSE %]
+  <a href="[% base %][% thread.message.filename %]" name="[% thread.message.filename %]">
+  [% END %]
+  [% thread.message.subject | html %]
+  [% IF thread.message == message ; "</b>" ; ELSE ; "</a>" ; END %]<br />
+
+  <small>[% thread.message.from | html %] <i>[% date.format(thread.message.epoch_date) %]</i></small>
+[% ELSE %]
+  (message not available)
+[% END %]
+[% IF thread.child %]
+  <ul>
+	[% IF maxdepth && depth >= maxdepth %]
+<li>too deep to show</li>
+	[% ELSE %]
+		[% INCLUDE thread.tt2 thread=thread.child depth=depth+1 %]
+	[% END %]
+  </ul>
+[% END %]
+</li>
+[% IF thread.next %]
+  [% INCLUDE thread.tt2 thread=thread.next %]
+[% END %]

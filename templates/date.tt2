@@ -1,0 +1,18 @@
+[% PROCESS header.tt2 title="Messages for " _ archive_date %]
+
+<h1>messages for [% archive_date %]</h1>
+
+<p>
+[<a href="TODO">last</a>]
+[<a href="TODO">next</a>]
+[<a href="[% base %]/index.html">thread index</a>]
+</p>
+
+[% FOR mail=mails %]
+<ul class=threads>
+<li class=thread>
+<a href="[% base %][% mail.filename %]" name="[% mail.filename %]">
+[% mail.subject | html %]</a><br />
+<small>[% mail.from | html %] <i>[% date.format(mail.epoch_date) %]</i></small>
+</li></ul>
+[% END %]

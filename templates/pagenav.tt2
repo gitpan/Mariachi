@@ -1,0 +1,12 @@
+[% IF pages %]
+<p>[% IF page > 0 %]<a href="index[% IF page > 1; "_" _ (page - 1) ; END %].html">&lt; mari</a>[% ELSE %]mari[% END %]
+
+[% FOREACH p = [0..pages] %]
+[% IF p == page ; "<b>a</b>"; ELSE %]
+<a href="index[% IF p > 0; "_" _ p ; END %].html">a</a>[% END %]
+[% END %]
+[% IF page < pages %]<a href="index_[% page + 1 %].html">chi &gt;</a>[% ELSE %]chi[% END %]
+<br />[ Page [% page + 1 %] of [% pages + 1 %] ]
+</p>
+[% END %]
+

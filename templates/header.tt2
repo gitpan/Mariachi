@@ -1,0 +1,31 @@
+[% USE date( format = '%H:%M on %d %b %Y' ) %]
+
+<html>
+<head>
+<title>[% title | html %]</title>
+<style type="text/css"><!--
+  body {
+    color: #444444;
+    background-color: #FFFFFF;
+    font-family: Verdana, Geneva, Arial, Helvetica;
+  }
+  .headers {
+    border: 1px solid black;
+    color: black;
+    background-color: #dddddd;
+  }
+  .threads {
+    border: 1px solid black;
+    color: black;
+    background-color: #dddddd;
+    margin-top: 10px;
+  }
+  .thread {
+    list-style-image: none;
+    list-style-type: none;
+  }
+  
+--></style>
+</head>
+<body>
+
