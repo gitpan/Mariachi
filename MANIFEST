@@ -1,5 +1,10 @@
 Build.PL
+Makefile.PL
+Changes
 MANIFEST
+SIGNATURE
+t/0-signature.t
+t/message.t
 META.yml
 TODO
 lib/Mariachi.pm

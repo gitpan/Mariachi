@@ -1,0 +1,25 @@
+0.3	23rd May, 2003
+	Fixed Message->from
+
+	Tweaks to thread output - only display subject where it's
+	different from the previous one
+
+	Italicise quoted sections of email
+
+	Added new body_sigless and sig methods in message.
+
+	INCOMPATIBLE CHANGE: Filename generation has changed from
+	using md5_base64 to md5_hex for aesthetic reasons. This will
+	break links for existing installations.
+
+	Distribution includes a passthrough Makefile.PL for CPAN.pm users
+
+
+
+0.2	Friday 2nd May, 2003
+	fixed distribution - now includes Siesta::Build
+
+
+
+0.1	Friday 2nd May, 2003
+	initial CPAN release

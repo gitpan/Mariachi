@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Mariachi
-version: 0.2
+version: 0.3
 license: perl
 distribution_type: module
 requires:
@@ -12,7 +12,10 @@ requires:
   Mail::Thread: 2.2
   Memoize: 0
   Module::Build: 0.18
+  Storable: 0
   Template: 0
+  Test::More: 0
+  Time::HiRes: 0
   URI::Find::Schemeless::Stricter: 0
 recommends: {}
 build_requires: {}
@@ -21,15 +24,12 @@ dynamic_config: 1
 provides:
   Mariachi:
     file: lib/Mariachi.pm
-    version: 0.2
+    version: 0.3
   Mariachi::Folder:
     file: lib/Mariachi.pm
-    version: ~
+    version: 0.3
   Mariachi::Message:
     file: lib/Mariachi/Message.pm
-    version: ~
-  Siesta::Build:
-    file: inc/Siesta/Build.pm
     version: ~
   Template::Plugin::Mariachi:
     file: lib/Template/Plugin/Mariachi.pm
