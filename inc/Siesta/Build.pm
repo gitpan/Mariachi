@@ -58,7 +58,7 @@ sub ACTION_install_extras {
 sub ACTION_cover {
     my $self = shift;
     $self->depends_on('build');
-    system qw( rm -rf cover_db );
+    system qw( cover -delete );
 
     # sometimes we get failing tests, which makes Test::Harness
     # die.  catch that
