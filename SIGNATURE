@@ -15,17 +15,16 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 26880f8f69d12622f47788ceb5cd4f27425f1dbe Build.PL
-SHA1 0d1028363047c4f11ecbfbfaed323bcc2b931031 Changes
-SHA1 aca28c841f74524b42e32e5acab80c2ab5b76447 MANIFEST
-SHA1 d43eb08c451ed6e744574e11c3f8907b960b881e META.yml
+SHA1 3d360f769d28af3af69516d6fa52e712cb35d02e Changes
+SHA1 26aed09be36c69d8c6dd5365643c98909fbbc50b MANIFEST
+SHA1 b7b2286e19f8a0cba87ddd7da2890d1a5322b8f8 META.yml
 SHA1 1849b2e69cd3bf568e221f73cf6e91ebae6489c0 Makefile.PL
 SHA1 85706b090939268eb90b12f2c35d86ef5a079402 TODO
 SHA1 4b9365d658750c134a5a19447ce7dfc1028900e2 inc/Siesta/Build.pm
-SHA1 dad7da683b507d42584d85cd69b6f975237dde14 lib/Mariachi.pm
+SHA1 c7251ff93a91abcb437476e4c4e5fb78a8cdd0a8 lib/Mariachi.pm
 SHA1 2bb3e80a6e2e3694fa8edd3ccb4ed5129a5ebae7 lib/Mariachi/Message.pm
 SHA1 6b8fb5b9b88606f19467bd6d9d65ec09fbb551de lib/Template/Plugin/Mariachi.pm
 SHA1 05c610514d72d349f27fb929712dfc9320d9010b mariachi
-SHA1 f050d5c61471bfe89b84b325a64adaaa29626a19 t/0-signature.t
 SHA1 28fefe7af59455a46ec9cd54b4efa912e5ea497f t/message.t
 SHA1 bbb9b8fb7905c4626f6227276cd748b1138881fd templates/date.tt2
 SHA1 2d347b831abd23270641d374493f8f1f23952a45 templates/header.tt2
@@ -37,7 +36,7 @@ SHA1 647a9b34edd965fab054955d4a4b5356b26cb3e3 templates/thread.tt2
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.2 (GNU/Linux)
 
-iD8DBQE+zdYILtfcZtsytAYRApvqAJ9Pt+G1vhAYKpjoc8vpPWO7Fo6vpwCeJt84
-zzIdPpzpTiOywFit7Zpf/H0=
-=Bwdn
+iD8DBQE+zh0XLtfcZtsytAYRAmTZAJwJe8jbz8VDwD46MJycFWiI0NjhIQCgkgyg
+V8hTfVyOQmGGKJ9GZDFiL0g=
+=t9vU
 -----END PGP SIGNATURE-----
