@@ -1,4 +1,4 @@
-README for Mariachi 0.4
+README for Mariachi 0.41
 
 =head1 NAME
 
@@ -45,6 +45,12 @@ What changed over the last 3 revisions
 
 =over
 
+=item 0.41	Friday 27th June, 2003
+
+	Last release had a screwed up SIGNATURE file.  Since they keep biting
+	me we'll stop shipping them for a while.
+
+
 =item 0.4	Thursday 26th June, 2003
 
 	Now we ship with a lurker-style output.
@@ -70,24 +76,6 @@ What changed over the last 3 revisions
 
 	New distribution, without the failing t/0signature.t
 
-
-=item 0.3	23rd May, 2003
-
-	Fixed Message->from
-
-	Tweaks to thread output - only display subject where it's
-	different from the previous one
-
-	Italicise quoted sections of email
-
-	Added new body_sigless and sig methods in message.
-
-	INCOMPATIBLE CHANGE: Filename generation has changed from
-	using md5_base64 to md5_hex for aesthetic reasons. This will
-	break links for existing installations.
-
-	Distribution includes a passthrough Makefile.PL for CPAN.pm users
-
 =back
 
 =head1 AUTHORS
@@ -96,8 +84,12 @@ This code was written as part of the Siesta project and includes code
 from:
 
 Richard Clamp <richardc@unixbeard.net>
+
 Simon Wistow <simon@thegestalt.org>
+
 Tom Insam <tom@jerakeen.org>
+
+Mark Fowler <mark@twoshortplanks.com>
 
 More information about the Siesta project can be found online at
 http://siesta.unixbeard.net/

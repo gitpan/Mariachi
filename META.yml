@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Mariachi
-version: 0.4
+version: 0.41
 license: perl
 distribution_type: module
 requires:
@@ -31,10 +31,10 @@ dynamic_config: 1
 provides:
   Mariachi:
     file: lib/Mariachi.pm
-    version: 0.4
+    version: 0.41
   Mariachi::Lurker:
     file: lib/Mariachi.pm
-    version: 0.4
+    version: 0.41
   Mariachi::Message:
     file: lib/Mariachi/Message.pm
     version: ~
