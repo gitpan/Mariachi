@@ -1,4 +1,4 @@
-README for Mariachi 0.5
+README for Mariachi 0.51
 
 =head1 NAME
 
@@ -45,6 +45,15 @@ What changed over the last 3 revisions
 
 =over
 
+=item 0.51    Tuesday 2nd September, 2003
+
+	Template tweaks - apply the anonymising mariachi filter to subject
+	lines
+
+	Correct a MANIFEST booboo and ship templates/css.tt2
+
+
+
 =item 0.50    Friday 29th August, 2003
 
 	Split some code out into Text::Original
@@ -60,27 +69,6 @@ What changed over the last 3 revisions
 
 	Last release had a screwed up SIGNATURE file.  Since they keep biting
 	me we'll stop shipping them for a while.
-
-
-=item 0.4	Thursday 26th June, 2003
-
-	Now we ship with a lurker-style output.
-
-	template paths are specifyable
-
-	template directories will be scanned for non-template files,
-	and those that exist will be copied into the output tree
-
-	Mariachi::Message now has first_line, first_sentence and
-	others, to allow extra context in the thread index pages.
-
-	INCOMPATIBLE CHANGES: 
-	
-	Command line interface changed.  Now instead of positional
-	parameters we use named ones.
-
-	Mariach->{list_name,input,output,threads_per_page} have all been
-	replaced with a single AppConfig instance, C<config>
 
 =back
 
