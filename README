@@ -1,4 +1,4 @@
-README for Mariachi 0.41
+README for Mariachi 0.5
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ This module has external dependencies on the following modules:
  Storable
  Template
  Template::Plugin::Page
- Test::More
+ Text::Original
  Time::HiRes
  URI::Find::Schemeless::Stricter
 
@@ -44,6 +44,17 @@ and if all goes well
 What changed over the last 3 revisions
 
 =over
+
+=item 0.50    Friday 29th August, 2003
+
+	Split some code out into Text::Original
+
+	Added a --class option to allow dynamic selection of the main class
+        from the command line.
+
+        Split some of the default templates up.
+
+
 
 =item 0.41	Friday 27th June, 2003
 
@@ -70,11 +81,6 @@ What changed over the last 3 revisions
 
 	Mariach->{list_name,input,output,threads_per_page} have all been
 	replaced with a single AppConfig instance, C<config>
-
-
-=item 0.31	23rd May, 2003
-
-	New distribution, without the failing t/0signature.t
 
 =back
 

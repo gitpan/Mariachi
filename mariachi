@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl -w
 use strict;
-use Mariachi;
 use AppConfig qw(:argcount);
+use Mariachi;
 
 =head1 NAME
 
@@ -118,6 +118,57 @@ $config->define("refresh", {
    });
 
 
+=head2 --nolurker
+
+Disable lurker output
+
+=cut
+
+$config->define("lurker", {
+    DEFAULT  => 1,
+    ARGCOUNT => ARGCOUNT_NONE
+});
+
+=head2 --thread-context I<context_style>
+
+Controls the amount of context to show with a message in thread view.
+
+Legal values for I<context_style> are C<first_line>,
+C<first_paragraph>, C<first_sentence>, and the empty string (the
+default).
+
+=head2 --lurker-context I<context_style>
+
+See C<thread-context>
+
+=cut
+
+my %context_styles = map {
+    $_ => 1
+} '', qw( first_line first_paragraph first_sentence );
+
+$config->define("thread-context", {
+    DEFAULT => '',
+    VALIDATE => sub { $context_styles{ $_[1] } }
+   });
+
+$config->define("lurker-context", {
+    DEFAULT => '',
+    VALIDATE => sub { $context_styles{ $_[1] } }
+   });
+
+=head2 --class I<class>
+
+Specifies using a class other than C<Mariachi> to do the rendering.
+
+=cut
+
+$config->define("class", {
+    DEFAULT => 'Mariachi',
+    VALIDATE => sub { eval "require $_[1]; 1" or die "$@" }
+   });
+
+
 # define the system and the user config files
 my $sys  = "/usr/local/mariachi/mariachi.conf";
 my $user = "$ENV{HOME}/.mariachi";
@@ -148,9 +199,9 @@ unless (defined $config->name) {
     $config->name("no list name");
 }
 
-Mariachi->new( config  => $config,
-               threads_per_page => 20,
-              )
+$config->class->new( config  => $config,
+                     threads_per_page => 20,
+                    )
   ->perform;
 
 

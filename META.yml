@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Mariachi
-version: 0.41
+version: 0.50
 license: perl
 distribution_type: module
 requires:
@@ -21,24 +21,26 @@ requires:
   Storable: 0
   Template: 0
   Template::Plugin::Page: 0
-  Test::More: 0
+  Text::Original: 0
   Time::HiRes: 0
   URI::Find::Schemeless::Stricter: 0
 recommends: {}
-build_requires: {}
+build_requires:
+  Test::More: 0
 conflicts: {}
 dynamic_config: 1
 provides:
   Mariachi:
     file: lib/Mariachi.pm
-    version: 0.41
+    version: 0.50
+  Mariachi::Folder:
+    file: lib/Mariachi.pm
+    version: 0.50
   Mariachi::Lurker:
     file: lib/Mariachi.pm
-    version: 0.41
+    version: 0.50
   Mariachi::Message:
     file: lib/Mariachi/Message.pm
-    version: ~
   Template::Plugin::Mariachi:
     file: lib/Template/Plugin/Mariachi.pm
-    version: ~
-generated_by: Module::Build version 0.18
+generated_by: Module::Build version 0.20
